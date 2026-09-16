@@ -1,0 +1,21 @@
+name: trade-guard
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 guard.py
+        env:
+          SCTKEY: ${{ secrets.SCTKEY }}
+        working-directory: .
+      - name: commit state
+        run: |
+          git config user.name guard; git config user.email guard@zhishen
+          git add state.jsonl && git diff --cached --quiet || git commit -m "state $(date -u +%FT%TZ)"
+          git push
