@@ -1,0 +1,4 @@
+01:30:14 probe2 start
+01:30:15 ts_iso 0.4s
+01:30:15 GET /api/v5/account/balance FAILED HTTPError 0.2s HTTP Error 401: Unauthorized
+01:30:15 probe2 end
