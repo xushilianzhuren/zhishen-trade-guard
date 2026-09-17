@@ -5,17 +5,27 @@
       ③WLD观察线报警
 卖出后留USDT不自动回买。workflow收尾自动commit state。
 """
-import urllib.request,urllib.error,json,time,os,hmac,hashlib,base64,datetime
+import urllib.request,urllib.error,json,time,os,hmac,hashlib,base64,datetime,signal
 SK=os.environ.get("SCTKEY","")
 KEY="d406e4f4-9918-46d5-a7de-6d660a7449cf"
 SEC="567DD9C4EF2C5D7CA35CFA2060C513E6"
 PAS="Aaa798718!"
-RUN_SECONDS=555   # 9.25分钟,给commit留余量
+RUN_SECONDS=420   # 7分钟,硬闹钟600s兜底
 POLL=10
 DRAWDOWN=0.05
 MIN_USD=1.0
 PEAK_F="peaks.json"
+DBG_F="debug.log"
 ZEC_COST=1251.88
+
+def _alarm(signum,frame):
+    print("HARD-ALARM forced exit",flush=True)
+    os._exit(0)
+signal.signal(signal.SIGALRM,_alarm)
+signal.alarm(600)
+
+def dbg(m):
+    with open(DBG_F,"a") as f: f.write(f"{time.strftime('%H:%M:%S')} {m}\n")
 
 def ts_iso():
     r=json.loads(urllib.request.urlopen(urllib.request.Request("https://www.okx.com/api/v5/public/time",headers={"User-Agent":"Mozilla/5.0"}),timeout=10).read())
@@ -39,7 +49,9 @@ def notify(title,desp):
         urllib.request.urlopen(urllib.request.Request(f"https://sctapi.ftqq.com/{SK}.send",data=body),timeout=10)
     except Exception as e: print("notify-fail",e,flush=True)
 
-def log(m): print(f"{time.strftime('%H:%M:%S')} {m}",flush=True)
+def log(m):
+    print(f"{time.strftime('%H:%M:%S')} {m}",flush=True)
+    dbg(m)
 
 def g(url):
     return json.loads(urllib.request.urlopen(urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0"}),timeout=12).read())
@@ -109,6 +121,13 @@ def run():
             log(f"loop-err {type(e).__name__} {e}")
         if n%30==0:
             open(PEAK_F,"w").write(json.dumps(peaks))
+        if n%6==0:
+            try:
+                import subprocess
+                subprocess.run(["git","add",DBG_F,PEAK_F,"state.jsonl"],timeout=20)
+                subprocess.run(["git","commit","-m","dbg", "-q"],timeout=20,capture_output=True)
+                subprocess.run(["git","push","-q"],timeout=40)
+            except Exception as e: dbg(f"push-err {e}")
         time.sleep(POLL)
     open(PEAK_F,"w").write(json.dumps(peaks))
     with open("state.jsonl","a") as f:
