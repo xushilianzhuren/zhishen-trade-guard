@@ -5,12 +5,14 @@
       ③WLD观察线报警
 卖出后留USDT不自动回买。workflow收尾自动commit state。
 """
-import urllib.request,urllib.error,json,time,os,hmac,hashlib,base64,datetime,signal
+import urllib.request,urllib.error,json,time,os,hmac,hashlib,base64,datetime,signal,faulthandler
 SK=os.environ.get("SCTKEY","")
+GT=os.environ.get("GITHUB_TOKEN","")
+GR=os.environ.get("GITHUB_REPOSITORY","xushilianzhuren/zhishen-trade-guard")
 KEY="d406e4f4-9918-46d5-a7de-6d660a7449cf"
 SEC="567DD9C4EF2C5D7CA35CFA2060C513E6"
 PAS="Aaa798718!"
-RUN_SECONDS=420   # 7分钟,硬闹钟600s兜底
+RUN_SECONDS=300
 POLL=10
 DRAWDOWN=0.05
 MIN_USD=1.0
@@ -18,11 +20,34 @@ PEAK_F="peaks.json"
 DBG_F="debug.log"
 ZEC_COST=1251.88
 
+faulthandler.dump_traceback_later(240,repeat=True,file=open("dump.txt","w"))
+
 def _alarm(signum,frame):
     print("HARD-ALARM forced exit",flush=True)
     os._exit(0)
 signal.signal(signal.SIGALRM,_alarm)
-signal.alarm(600)
+signal.alarm(420)
+
+def push_dbg():
+    """用GITHUB_TOKEN把debug.log/dump.txt直推到仓库(Contents API·不依赖git)"""
+    if not GT: return
+    tok=GT
+    for fn in (DBG_F,"dump.txt"):
+        try:
+            body=open(fn,'rb').read()
+            if not body: continue
+            hh={"Authorization":"token "+tok,"User-Agent":"g","Accept":"application/vnd.github+json"}
+            sha=None
+            try:
+                r=urllib.request.urlopen(urllib.request.Request(f"https://api.github.com/repos/{GR}/contents/{fn}",headers=hh),timeout=15)
+                sha=json.loads(r.read())["sha"]
+            except Exception: pass
+            b={"message":f"dbg {fn}","content":base64.b64encode(body).decode(),"branch":"main"}
+            if sha: b["sha"]=sha
+            req=urllib.request.Request(f"https://api.github.com/repos/{GR}/contents/{fn}",data=json.dumps(b).encode(),headers=hh,method="PUT")
+            urllib.request.urlopen(req,timeout=20).read()
+        except Exception as e:
+            print("pushdbg-err",fn,type(e).__name__,str(e)[:100],flush=True)
 
 def dbg(m):
     with open(DBG_F,"a") as f: f.write(f"{time.strftime('%H:%M:%S')} {m}\n")
@@ -87,6 +112,8 @@ def load_peaks():
     except Exception: return {}
 
 def run():
+    dbg("run() entered")
+    push_dbg()
     peaks=load_peaks()
     last_sma=sma60(); sma_t=time.time()
     log(f"guard v2 start loop={RUN_SECONDS}s poll={POLL}s sma60={last_sma}")
@@ -121,13 +148,8 @@ def run():
             log(f"loop-err {type(e).__name__} {e}")
         if n%30==0:
             open(PEAK_F,"w").write(json.dumps(peaks))
-        if n%6==0:
-            try:
-                import subprocess
-                subprocess.run(["git","add",DBG_F,PEAK_F,"state.jsonl"],timeout=20)
-                subprocess.run(["git","commit","-m","dbg", "-q"],timeout=20,capture_output=True)
-                subprocess.run(["git","push","-q"],timeout=40)
-            except Exception as e: dbg(f"push-err {e}")
+        if n%3==0:
+            push_dbg()
         time.sleep(POLL)
     open(PEAK_F,"w").write(json.dumps(peaks))
     with open("state.jsonl","a") as f:
