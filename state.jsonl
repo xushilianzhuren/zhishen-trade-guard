@@ -1635,3 +1635,4 @@
 {"ts": "2026-10-25 00:01:37", "near": 4.49, "near_pct": 3.01, "near_ma60": 3.9, "zec": 1206.38, "zec_ma60": 1226.1, "alerts": ["obsvZEC"]}
 {"ts": "2026-10-25 02:28:31", "near": 4.475, "near_pct": 2.66, "near_ma60": 3.9, "zec": 1219.31, "zec_ma60": 1226.3, "alerts": ["obsvZEC"]}
 {"ts": "2026-10-25 07:48:53", "near": 4.443, "near_pct": 1.93, "near_ma60": 3.9, "zec": 1198.05, "zec_ma60": 1226.0, "alerts": ["obsvZEC"]}
+{"ts": "2026-10-25 12:54:45", "near": 4.462, "near_pct": 2.36, "near_ma60": 3.9, "zec": 1213.26, "zec_ma60": 1226.1, "alerts": ["obsvZEC"]}
