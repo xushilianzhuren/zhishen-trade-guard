@@ -1681,3 +1681,4 @@
 {"ts": "2026-11-03 07:59:37", "near": 3.792, "near_pct": -13.01, "near_ma60": 4.2, "zec": 1139.14, "zec_ma60": 1285.4, "alerts": ["smaNEAR", "obsvZEC"]}
 {"ts": "2026-11-03 15:46:35", "near": 3.861, "near_pct": -11.42, "near_ma60": 4.2, "zec": 1215.05, "zec_ma60": 1286.4, "alerts": ["smaNEAR", "obsvZEC"]}
 {"ts": "2026-11-03 21:22:49", "near": 3.869, "near_pct": -11.24, "near_ma60": 4.3, "zec": 1241.74, "zec_ma60": 1290.0, "alerts": ["smaNEAR", "obsvZEC"]}
+{"ts": "2026-11-04 01:33:20", "near": 3.763, "near_pct": -13.67, "near_ma60": 4.3, "zec": 1194.99, "zec_ma60": 1289.6, "alerts": ["smaNEAR", "obsvZEC"]}
